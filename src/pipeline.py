@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import zipfile
-
 import duckdb
 import numpy as np
 import pandas as pd
 import requests
 
-CFPB_URL = "https://files.consumerfinance.gov/ccdb/complaints.csv.zip"
+CFPB_API = "https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/"
 REQUIRED = {
     "complaint_id", "date_received", "product", "issue", "company",
     "state", "submitted_via", "timely_response", "company_response",
@@ -45,20 +43,13 @@ def generate_demo(path: Path, rows: int = 15000, seed: int = 42) -> Path:
     return path
 
 
-def download_cfpb(destination: Path) -> Path:
-    """Download the official full CFPB extract. It is large, so this is opt-in."""
+def download_cfpb(destination: Path, rows: int = 10000) -> Path:
+    """Download a review-friendly sample from the official CFPB API."""
     destination.parent.mkdir(parents=True, exist_ok=True)
-    archive = destination.with_suffix(".zip")
-    with requests.get(CFPB_URL, stream=True, timeout=120) as response:
-        response.raise_for_status()
-        with archive.open("wb") as out:
-            for chunk in response.iter_content(1024 * 1024):
-                out.write(chunk)
-    with zipfile.ZipFile(archive) as zf:
-        member = next(name for name in zf.namelist() if name.endswith(".csv"))
-        with zf.open(member) as source, destination.open("wb") as out:
-            out.write(source.read())
-    archive.unlink(missing_ok=True)
+    response = requests.get(CFPB_API, params={"field": "all", "size": min(rows, 10000)}, timeout=120)
+    response.raise_for_status()
+    records = [hit["_source"] for hit in response.json()["hits"]["hits"]]
+    pd.DataFrame(records).to_csv(destination, index=False)
     return destination
 
 
@@ -68,6 +59,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     aliases = {
         "date_received": "date_received", "complaint_id": "complaint_id",
         "submitted_via": "submitted_via", "timely_response": "timely_response",
+        "timely": "timely_response",
         "company_response_to_consumer": "company_response",
         "consumer_disputed": "consumer_disputed",
     }
@@ -125,10 +117,9 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     csv_path = root / "data" / ("cfpb_complaints.csv" if args.real else "demo_complaints.csv")
     if not csv_path.exists():
-        download_cfpb(csv_path) if args.real else generate_demo(csv_path, args.rows)
+        download_cfpb(csv_path, args.rows) if args.real else generate_demo(csv_path, args.rows)
     print(build_mart(csv_path, root / "data" / "complaints.duckdb"))
 
 
 if __name__ == "__main__":
     main()
-

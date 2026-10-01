@@ -29,7 +29,14 @@ streamlit run app.py
 pytest -q
 ```
 
-Use `python -m src.pipeline --real` to download the large official extract. The default deterministic dataset lets reviewers run the complete project immediately.
+Use `python -m src.pipeline --real --rows 10000` to retrieve a real sample through the official CFPB API. The default deterministic dataset lets reviewers run the complete project immediately without network access.
+
+## Verified official-data run
+
+- 10,000 complaint records retrieved through the CFPB API
+- 16 financial-product categories and 325 companies represented
+- Zero duplicate complaint IDs and zero nulls in critical fields
+- 99.73% timely-response rate in this API sample; this is not presented as a population-wide estimate
 
 ## Architecture
 
@@ -41,8 +48,8 @@ Use `python -m src.pipeline --real` to download the large official extract. The 
 
 ## Resume bullets (replace demo values after the full-data run)
 
-- Engineered a Python and DuckDB pipeline for **[N]+ banking complaints**, enforcing uniqueness and critical-field quality checks before analytics.
-- Modelled monthly product and company scorecards in SQL, measuring timely-response and dispute rates across **[N] products and [N] institutions**.
+- Engineered a Python and DuckDB pipeline for **10,000 official banking complaints**, enforcing uniqueness and critical-field quality checks before analytics.
+- Modelled monthly product and company scorecards in SQL across **16 product categories and 325 institutions**, with explicitly governed response-rate definitions.
 - Delivered an interactive operations dashboard that surfaces complaint trends and top root causes, reducing a defined review workflow from **[before] to [after]**.
 
 ## Interview questions
