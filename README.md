@@ -14,7 +14,7 @@ The project demonstrates SQL, governed KPI definitions, data validation, root-ca
 
 - Python/pandas for cleaning and validation
 - DuckDB and SQL for analytical marts
-- Streamlit and Plotly for the live dashboard
+- FastAPI plus a responsive HTML/CSS/JavaScript dashboard
 - GitHub Actions and pytest for CI
 - Official, free [CFPB Consumer Complaint Database](https://www.consumerfinance.gov/data-research/consumer-complaints/)
 
@@ -25,9 +25,11 @@ python -m venv .venv
 .venv/Scripts/activate
 pip install -r requirements.txt
 python -m src.pipeline
-streamlit run app.py
+uvicorn app:app --reload
 pytest -q
 ```
+
+Open `http://127.0.0.1:8000` to use the dashboard.
 
 Use `python -m src.pipeline --real --rows 10000` to retrieve a real sample through the official CFPB API. The default deterministic dataset lets reviewers run the complete project immediately without network access.
 
